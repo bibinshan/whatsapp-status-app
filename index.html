@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Status Share</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #25D366, #128C7E, #075E54);
+    }
+
+    h1 {
+      color: #128C7E;
+      margin-bottom: 10px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    .preview {
+      width: 200px;
+      height: 200px;
+      border-radius: 15px;
+      margin: 20px auto;
+      background-size: cover;
+      background-position: center;
+      border: 3px solid #25D366;
+      box-shadow: 0 8px 25px rgba(37, 211, 102, 0.3);
+      position: relative;
+    }
+
+    .preview::after {
+      content: '📸';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      opacity: 0.3;
+    }
+
+    .preview.loaded::after {
+      display: none;
+    }
+
+    button {
+      background: linear-gradient(135deg, #25D366 0%, #22c55e 100%);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      width: 100%;
+      margin: 20px 0 10px 0;
+      box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(37, 211, 102, 0.6);
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .instructions {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 15px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #25D366;
+    }
+
+    .status-message {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-info {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+
+    .status-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .tech-info {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #999;
+      padding: 10px;
+      background: #f1f3f4;
+      border-radius: 8px;
+    }
+
+    .share-icon {
+      display: inline-block;
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        margin: 10px;
+        padding: 30px 20px;
+      }
+      
+      .preview {
+        width: 150px;
+        height: 150px;
+      }
+      
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📸 WhatsApp Status Share</h1>
+    <p class="subtitle">One-click sharing made simple</p>
+    
+    <div class="preview" id="imagePreview"></div>
+    
+    <button onclick="shareToWhatsApp()">
+      <span class="share-icon">🚀</span>Share to WhatsApp Status
+    </button>
+    
+    <div class="instructions">
+      <strong>How it works:</strong><br>
+      📱 <strong>Mobile:</strong> Tap button → Share dialog → WhatsApp → Add to Status<br>
+      💻 <strong>Desktop:</strong> Image opens in new tab → Save → Share manually
+    </div>
+    
+    <div class="status-message" id="statusMessage"></div>
+    
+    <div class="tech-info">
+      <strong>Device:</strong> <span id="deviceInfo"></span><br>
+      <strong>Share API:</strong> <span id="shareSupport"></span>
+    </div>
+  </div>
+
+  <script>
+    // 🔥 REPLACE THIS WITH YOUR IMAGE URL FROM STEP 1
+    const imageUrl = 'https://ibb.co/rGR8CMy1';
+    
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', function() {
+      loadImagePreview();
+      detectDevice();
+    });
+
+    function loadImagePreview() {
+      const preview = document.getElementById('imagePreview');
+      const img = new Image();
+      
+      img.onload = function() {
+        preview.style.backgroundImage = `url(${imageUrl})`;
+        preview.classList.add('loaded');
+        showStatus('✅ Image loaded successfully!', 'success');
+      };
+      
+      img.onerror = function() {
+        showStatus('❌ Failed to load image. Check your URL!', 'error');
+      };
+      
+      img.src = imageUrl;
+    }
+
+    async function shareToWhatsApp() {
+      showStatus('🔄 Preparing to share...', 'info');
+      
+      // Check if Web Share API is supported
+      if (navigator.share) {
+        try {
+          // Try to fetch and share the image
+          const response = await fetch(imageUrl);
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch image');
+          }
+          
+          const blob = await response.blob();
+          const file = new File([blob], 'whatsapp-status.jpg', { type: blob.type });
+          
+          // Check if files can be shared
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'WhatsApp Status Image',
+              text: 'Share this awesome image to your WhatsApp Status!'
+            });
+            
+            showStatus('🎉 Share dialog opened! Select WhatsApp to continue.', 'success');
+          } else {
+            // Fallback to URL sharing
+            await navigator.share({
+              title: 'WhatsApp Status Image',
+              text: 'Check out this awesome image!',
+              url: imageUrl
+            });
+            
+            showStatus('📱 Share dialog opened with image URL!', 'info');
+          }
+        } catch (err) {
+          console.error('Share failed:', err);
+          fallbackShare();
+        }
+      } else {
+        fallbackShare();
+      }
+    }
+
+    function fallbackShare() {
+      showStatus('💻 Opening image in new tab. Save and share manually!', 'info');
+      
+      // Open image in new tab
+      window.open(imageUrl, '_blank');
+      
+      // Alternative: Force download (uncomment if needed)
+      // const link = document.createElement('a');
+      // link.href = imageUrl;
+      // link.download = 'whatsapp-status.jpg';
+      // link.click();
+    }
+
+    function showStatus(message, type) {
+      const statusEl = document.getElementById('statusMessage');
+      statusEl.textContent = message;
+      statusEl.className = `status-message status-${type}`;
+      statusEl.style.display = 'block';
+      
+      // Auto-hide success messages
+      if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+          statusEl.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    function detectDevice() {
+      const deviceInfo = document.getElementById('deviceInfo');
+      const shareSupport = document.getElementById('shareSupport');
+      
+      // Detect device type
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      deviceInfo.textContent = isMobile ? '📱 Mobile' : '💻 Desktop';
+      
+      // Check share support
+      const hasShare = !!navigator.share;
+      const canShareFiles = navigator.canShare && navigator.canShare({files: []});
+      
+      if (hasShare && canShareFiles) {
+        shareSupport.textContent = '✅ Full Support';
+      } else if (hasShare) {
+        shareSupport.textContent = '⚠️ Partial Support';
+      } else {
+        shareSupport.textContent = '❌ Not Supported (Fallback Mode)';
+      }
+    }
+
+    // Test function for debugging
+    function testImageUrl() {
+      console.log('Testing image URL:', imageUrl);
+      fetch(imageUrl)
+        .then(response => {
+          console.log('Response status:', response.status);
+          console.log('Response OK:', response.ok);
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+        });
+    }
+    
+    // Make test function available in console
+    window.testImageUrl = testImageUrl;
+  </script>
+</body>
+</html>
